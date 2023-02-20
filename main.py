@@ -6,7 +6,7 @@ __authors__ = [
 
 from datetime import datetime
 import subprocess
-from sys import exit
+from sys import exit, argv
 from typing import Tuple
 
 from config import CONFIGS
@@ -24,29 +24,34 @@ def get_subprocess_response(input: str) -> Tuple[str, str]:
     return stdout, stderr, popen.returncode
 
 
-def run_apt_updater() -> str:
-    out, err, rc = get_subprocess_response(f"sudo -S apt-get update")
+def run_command(ip: str) -> str:
+    out, err, rc = get_subprocess_response(ip)
     if rc:
         raise ValueError(err)
     return out
+
+
+def run_apt_updater() -> str:
+    return run_command(f"sudo -S apt-get update")
 
 
 def run_apt_upgrader() -> str:
-    out, err, rc = get_subprocess_response(f"sudo -S apt-get -y upgrade")
-    if rc:
-        raise ValueError(err)
-    return out
+    return run_command(f"sudo -S apt-get -y upgrade")
 
 
-def execute_updater():
+def execute_updater(wanted_ssid: str):
     """Execute auto_updater scripting"""
     print(f"-------- Initiating Auto-Updater Script @ {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC --------")
-    ssid = get_ssid().strip().decode()
-    if 'starbucks' not in ssid.lower():
-        exit('Not on STARBUCKS network...')
+
+    found_ssid = get_ssid().strip().decode().upper()
+
+    print(f'Looking for [{wanted_ssid.upper()}] SSID...')
+    if wanted_ssid.upper() not in found_ssid:
+        exit(f'Not on {wanted_ssid.upper()} network.')
 
     if not (CONFIGS['pw'] and CONFIGS['pw'] != 'abc123'):
-        exit(f"ERROR: Password [{CONFIGS['pw']}] not accepted...")
+        print(f"WARNING: Password [{CONFIGS['pw']}] not configured...")
+
     try:
         update = run_apt_updater()
     except ValueError as valexc:
@@ -65,4 +70,9 @@ def execute_updater():
 
 
 if __name__ == '__main__':
-    execute_updater()
+    try:
+        ssid = argv[1]
+    except Exception:
+        ssid = 'starbucks'
+    finally:
+        execute_updater(ssid)
