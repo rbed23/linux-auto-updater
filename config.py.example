@@ -1,0 +1,3 @@
+CONFIGS = {
+  "pw": 'abc123'
+}

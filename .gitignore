@@ -1,0 +1,9 @@
+# dirs
+*__pycache__/
+
+# types
+*.lock
+
+# files
+config.py
+cron_output.txt
